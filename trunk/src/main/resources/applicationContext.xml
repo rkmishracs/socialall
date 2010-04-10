@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd"
+       default-lazy-init="true">
+
+
+    <!-- =================================================================== -->
+    <!-- AOP: Configuration and Aspects                                      -->
+    <!-- =================================================================== -->
+    <tx:advice id="appTxAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <!-- Read-only commented out to make things easier for end-users -->
+            <!-- http://issues.appfuse.org/browse/APF-556 -->
+            <!--tx:method name="get*" read-only="true"/-->
+            <tx:method name="*" rollback-for="TransactionRollbackException"/>
+        </tx:attributes>
+    </tx:advice>
+    
+    <aop:config>
+        <!--<aop:advisor id="appPersonManagerTx" advice-ref="appPersonManagerTxAdvice"
+                     pointcut="execution(* *..service.PersonManager.*(..))"
+                     order="0"/>--><!--
+        <aop:advisor id="personManagerSecurity" advice-ref="appPersonSecurityAdvice"
+                     pointcut="execution(* *..service.PersonManager.savePerson(..))"
+                     order="1"/>-->
+        <aop:pointcut id="personServiceOperation" expression="execution(* com.mystatusonline.service.*.*(..))"/>
+        
+        <aop:advisor id="personManagerTx" advice-ref="appTxAdvice"
+                     pointcut-ref="personServiceOperation"
+                     order="1"/>
+    </aop:config>
+
+
+    <!-- Activates scanning of @Autowired -->
+    <context:annotation-config/>
+    
+<!-- TODO: i dont know why this does not work, userservice is getting initialited.
+    --><!-- Activates scanning of @Repository and @Service --><!--
+    <context:component-scan base-package="com.mystatusonline"/>-->
+
+    <!-- Enable @Transactional support -->
+    <tx:annotation-driven/>
+
+
+<!--
+    <tx:advice id="appPersonManagerTxAdvice">
+        <tx:attributes>
+            <tx:method name="save*" rollback-for="PersonExistsException"/>
+        </tx:attributes>
+    </tx:advice>-->
+
+    <bean id="appPersonSecurityAdvice"
+          class="com.mystatusonline.service.PersonSecurityAdvice"/>
+
+
+    <!-- Add new DAOs here -->
+
+    <bean id="personDao"
+          class="com.mystatusonline.dao.hibernate.PersonDaoHibernate">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <!-- Add new Managers here -->
+    <bean id="personManager"
+          class="com.mystatusonline.service.impl.PersonManagerImpl">
+        <constructor-arg ref="personDao"/>
+        <property name="passwordEncoder" ref="passwordEncoder"/>
+        <property name="twitterAppApiKey" value="${twitterAppApiKey}"/>
+        <property name="twitterAppSecret" value="${twitterAppSecret}"/>
+        <property name="facebookAppApiKey" value="${facebookAppApiKey}"/>
+        <property name="facebookAppSecret" value="${facebookAppSecret}"/>
+        <property name="myspaceAppApiKey" value="${myspaceAppApiKey}"/>
+        <property name="myspaceAppSecret" value="${myspaceAppSecret}"/>
+
+    </bean>
+
+
+    <!-- =================================================================== -->
+    <!-- Mail: Sender and Velocity configuration                             -->
+    <!-- =================================================================== -->
+    <bean id="mailEngine" class="org.appfuse.service.MailEngine">
+        <property name="mailSender" ref="mailSender"/>
+        <property name="velocityEngine" ref="velocityEngine"/>
+        <property name="from" value="${mail.default.from}"/>
+    </bean>
+
+    <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+        <property name="host" value="${mail.host}"/>
+        <property name="defaultEncoding" value="UTF-8"/>
+        <!-- Uncomment if you need to authenticate with your SMTP Server -->
+        <property name="username" value="${mail.username}"/>
+        <property name="password" value="${mail.password}"/>
+        <property name="javaMailProperties">
+        <props>
+            <!-- Use SMTP-AUTH to authenticate to SMTP server -->
+            <prop key="mail.smtp.auth">true</prop>
+            <!-- Use TLS to encrypt communication with SMTP server -->
+            <prop key="mail.smtp.starttls.enable">true</prop>
+        </props>
+    </property>
+    </bean>
+
+    <!-- Configure Velocity for sending e-mail -->
+    <bean id="velocityEngine" class="org.springframework.ui.velocity.VelocityEngineFactoryBean">
+        <property name="velocityProperties">
+            <props>
+                <prop key="resource.loader">class</prop>
+                <prop key="class.resource.loader.class">
+                    org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader
+                </prop>
+                <prop key="velocimacro.library"></prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean id="mailMessage" class="org.springframework.mail.SimpleMailMessage" scope="prototype">
+        <property name="from" value="${mail.default.from}"/>
+    </bean>
+
+    <!-- =================================================================== -->
+    <!-- Security class from Spring Security - used to configure Password    -->
+    <!-- Encryption in UserManagerImpl. Can override in security.xml.        -->
+    <!-- =================================================================== -->
+    <bean id="passwordEncoder" class="org.springframework.security.providers.encoding.ShaPasswordEncoder"/>
+
+    <bean id="smsChecker" class="com.mystatusonline.backstageservices.SmsChecker">
+        <property name="personManager" ref="personManager"/>
+        <property name="host" value="${sms.mail.host}"/>
+        <property name="username" value="${sms.mail.username}"/>
+        <property name="password" value="${sms.mail.password}"/>
+    </bean>
+
+
+</beans>

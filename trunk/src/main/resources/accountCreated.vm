@@ -1,0 +1,6 @@
+${message}
+
+Username: ${person.username}
+Password: ${person.confirmPassword}
+
+Login at: ${applicationURL}
