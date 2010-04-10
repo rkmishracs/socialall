@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC
+        "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+        "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+    <!-- Constants -->
+    <constant name="struts.devMode" value="false"/>
+    <constant name="struts.i18n.encoding" value="UTF-8"/>
+    <constant name="struts.action.extension" value="html"/>
+    <constant name="struts.objectFactory" value="spring"/>
+    <constant name="struts.custom.i18n.resources"
+              value="ApplicationResources,errors"/>
+    <constant name="struts.multipart.maxSize" value="2097152"/>
+    <constant name="struts.ui.theme" value="css_xhtml"/>
+    <constant name="struts.codebehind.pathPrefix" value="/WEB-INF/pages/"/>
+    <constant name="struts.enable.SlashesInActionNames" value="true"/>
+    <constant name="struts.convention.action.disableScanning" value="true"/>
+
+    <!-- Configuration for the default package. -->
+    <package name="default" extends="struts-default">
+        <interceptors>
+            <!-- Interceptor to handle allowing only admins to certain actions -->
+            <interceptor name="loginOnly" class="loginCheckInterceptor"/>
+            <!-- Copied from struts-default.xml and changed validation exclude methods -->
+            <interceptor-stack name="defaultStack">
+                <interceptor-ref name="exception"/>
+                <interceptor-ref name="alias"/>
+                <interceptor-ref name="servletConfig"/>
+                <interceptor-ref name="prepare"/>
+                <interceptor-ref name="i18n"/>
+                <interceptor-ref name="chain"/>
+                <interceptor-ref name="debugging"/>
+                <interceptor-ref name="profiling"/>
+                <interceptor-ref name="scopedModelDriven"/>
+                <interceptor-ref name="modelDriven"/>
+                <interceptor-ref name="fileUpload"/>
+                <interceptor-ref name="checkbox"/>
+                <interceptor-ref name="staticParams"/>
+                <interceptor-ref name="params">
+                    <param name="excludeParams">dojo\..*</param>
+                </interceptor-ref>
+                <interceptor-ref name="conversionError"/>
+                <interceptor-ref name="validation">
+                    <param name="excludeMethods">cancel,execute,delete,edit,list</param>
+                </interceptor-ref>
+                <interceptor-ref name="workflow">
+                    <param name="excludeMethods">input,back,cancel,browse</param>
+                </interceptor-ref>
+            </interceptor-stack>
+            <interceptor-stack name="fileUploadStack">
+                <interceptor-ref name="fileUpload"/>
+                <interceptor-ref name="defaultStack"/>
+            </interceptor-stack>
+            <interceptor-stack name="loginCheck">
+                <interceptor-ref name="defaultStack"/>
+                <interceptor-ref name="loginOnly"/>
+            </interceptor-stack>
+        </interceptors>
+
+        <global-results>
+            <result name="mainMenu" type="redirectAction">mainMenu</result>
+            <result name="dataAccessFailure">/WEB-INF/pages/dataAccessFailure.jsp</result>
+            <result name="notLoggedIn" type="redirectAction">siteLogin</result>
+        </global-results>
+
+        <global-exception-mappings>
+            <exception-mapping exception="org.springframework.dao.DataAccessException" result="dataAccessFailure"/>
+            <exception-mapping exception="com.mystatusonline.service.PersonNotLoggedInException" result="notLoggedIn"/>
+        </global-exception-mappings>
+
+        <!-- REQUIRED -->
+        <action name="mainMenu" class="personAction">
+            <interceptor-ref name="loginCheck"/>
+            <result name="input">/WEB-INF/pages/mainMenu.jsp</result>
+            <result name="success">/WEB-INF/pages/mainMenu.jsp</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="socialNetworks" class="socialAction">
+            <interceptor-ref name="loginCheck"/>
+            <result name="input">/WEB-INF/pages/socialNetworks.jsp</result>
+            <result name="success">/WEB-INF/pages/socialNetworks.jsp</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="errorStatus">
+            <result name="success">/WEB-INF/pages/errorStatus.jsp</result>
+        </action>
+
+        <action name="updateStatus">
+            <interceptor-ref name="loginCheck"/>
+            <result name="success">/WEB-INF/pages/updateStatus.jsp</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="signup" class="signupAction">
+            <result name="input">/siteLogin.jsp</result>
+            <result name="success" type="chain">saveSignup</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="siteLogin" class="loginAction">
+            <result name="input">/siteLogin.jsp</result>
+            <result name="loggedIn" type="redirectAction">/updateStatus</result>
+            <result name="success" type="redirectAction">/mainMenu</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="attempLogin" class="loginAction">
+            <result name="input">/siteLogin.jsp</result>
+            <result name="success" type="chain">saveLogin</result>
+        </action>    
+
+        <!-- REQUIRED -->
+        <action name="saveSignup" class="signupAction" method="save">
+            <result name="input">/siteLogin.jsp</result>
+            <result name="success" type="redirectAction">/siteLogin</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="saveLogin" class="loginAction" method="login">
+            <result name="input">/siteLogin.jsp</result>
+            <result name="error">/siteLogin.jsp</result>
+            <result name="social" type="redirectAction">/socialNetworks</result>
+            <result name="success" type="redirectAction">/updateStatus</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="facebookSave" class="socialAction" method="facebookSave">
+            <interceptor-ref name="loginCheck"/>
+            <result name="input">/socialNetworks.jsp</result>
+            <result name="success" type="redirectAction">/socialNetworks</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="postStatus" class="networkAction" method="updateStatus">
+            <interceptor-ref name="loginCheck"/>
+            <result name="input" type="chain">updateStatus</result>
+            <result name="error" type="redirectAction">/updateStatus</result>
+            <result name="success" type="redirectAction">/updateStatus</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="updateStatus" class="networkAction">
+            <interceptor-ref name="loginCheck"/>
+            <result name="input">/WEB-INF/pages/updateStatus.jsp</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="twitterSave" class="socialAction" method="twitterSave">
+            <interceptor-ref name="loginCheck"/>
+            <result name="input">/socialNetworks.jsp</result>
+            <result name="redirect" type="redirect">${url}</result>
+            <result name="success" type="redirectAction">/socialNetworks</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="myspaceSave" class="socialAction" method="myspaceSave">
+            <interceptor-ref name="loginCheck"/>
+            <result name="input">/socialNetworks.jsp</result>
+            <result name="redirect" type="redirect">${url}</result>
+            <result name="success" type="redirectAction">/socialNetworks</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="updatePerson" class="com.mystatusonline.webapp.action.PersonAction" method="savePerson">
+            <interceptor-ref name="loginCheck"/>
+            <result name="input">/WEB-INF/pages/mainMenu.jsp</result>
+            <result name="success" type="redirectAction">/updateStatus</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="facebook" class="facebookAction">
+            <interceptor-ref name="loginCheck"/>
+            <result name="error" type="redirectAction">/siteLogin</result>
+            <result name="success" type="redirectAction">/facebookregistered</result>
+            <result name="failure" type="redirectAction">/facebookCancelLogin</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="twitter" class="twitterAction">
+            <interceptor-ref name="loginCheck"/>
+            <result name="error" type="redirectAction">/siteLogin</result>
+            <result name="success" type="redirectAction">/socialNetworks</result>
+            <result name="failure" type="redirectAction">/twitterCancelLogin</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="myspace" class="myspaceAction">
+            <interceptor-ref name="loginCheck"/>
+            <result name="error" type="redirectAction">/siteLogin</result>
+            <result name="success" type="redirectAction">/socialNetworks</result>
+            <result name="failure" type="redirectAction">/openSocialCancelLogin</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="facebookregistered">
+            <result name="success">/WEB-INF/pages/facebookregistered.jsp</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="facebookCancelLogin">
+            <result name="success">/WEB-INF/pages/facebookCancelLogin.jsp</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="twitterregistered">
+            <result name="success">/WEB-INF/pages/twitterregistered.jsp</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="twitterCancelLogin">
+            <result name="success">/WEB-INF/pages/twitterCancelLogin.jsp</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="resetPassword" class="passwordHintAction" method="resetPassword">
+            <result name="input">/WEB-INF/pages/resetPassword.jsp</result>
+            <result name="success">/WEB-INF/pages/resetPassword.jsp</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="resetPasswordNow" class="passwordResetNowAction">
+            <result name="input">/WEB-INF/pages/resetPasswordNow.jsp</result>
+        </action>
+
+        <!-- REQUIRED -->
+        <action name="changePasswordNow" class="passwordResetNowAction" method="resetPassword">
+            <result name="input">/WEB-INF/pages/resetPasswordNow.jsp</result>
+            <result name="error" type="redirectAction">resetPassword</result>
+            <result name="success" type="redirectAction">siteLogin</result>
+        </action>
+
+        <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+        
+        <action name="editUser" class="userAction" method="edit">
+            <interceptor-ref name="loginCheck"/>
+            <result name="success">/WEB-INF/pages/userForm.jsp</result>
+            <result name="input">/WEB-INF/pages/admin/userList.jsp</result>
+        </action>
+
+        <action name="persons" class="com.mystatusonline.webapp.action.PersonAction" method="list"> 
+            <result>/WEB-INF/pages/personList.jsp</result>
+        </action>
+
+        <action name="editPerson" class="com.mystatusonline.webapp.action.PersonAction" method="edit">
+            <result>/WEB-INF/pages/personForm.jsp</result>
+            <result name="error">/WEB-INF/pages/personList.jsp</result>
+        </action>
+
+        <action name="savePerson" class="com.mystatusonline.webapp.action.PersonAction" method="savePerson">
+            <result name="input">/WEB-INF/pages/personForm.jsp</result>
+            <result name="cancel" type="redirectAction">persons</result>
+            <result name="delete" type="redirectAction">persons</result>
+            <result name="success" type="redirectAction">persons</result>
+        </action>
+
+        <action name="editProfile" class="userAction" method="edit">
+            <result name="success">/WEB-INF/pages/userForm.jsp</result>
+            <result name="error">/WEB-INF/pages/mainMenu.jsp</result>
+        </action>
+
+        <action name="saveUser" class="userAction" method="save">
+            <result name="cancel" type="redirectAction">admin/users</result>
+            <result name="input">/WEB-INF/pages/userForm.jsp</result>
+            <result name="success" type="redirectAction">admin/users</result>
+        </action>
+
+
+        <!-- Add additional actions here -->
+    </package>
+
+    <!-- Actions in this package will be prefixed with /admin/ -->
+    <package name="admin" extends="default" namespace="/admin">
+        <action name="activeUsers"
+                class="com.opensymphony.xwork2.ActionSupport">
+            <result name="success">/WEB-INF/pages/admin/activeUsers.jsp</result>
+        </action>
+    </package>
+</struts>

@@ -1,0 +1,45 @@
+<!DOCTYPE validators PUBLIC "-//OpenSymphony Group//XWork Validator 1.0.2//EN"
+    "http://www.opensymphony.com/xwork/xwork-validator-1.0.2.dtd">
+<validators>
+    <field name="person.username">
+        <field-validator type="requiredstring">
+            <message key="errors.required"/>
+        </field-validator>
+    </field>
+    <field name="person.password">
+        <field-validator type="requiredstring">
+            <message key="errors.required"/>
+        </field-validator>
+    </field>
+    <field name="person.confirmPassword">
+        <field-validator type="requiredstring">
+            <message key="errors.required"/>
+        </field-validator>
+        <field-validator type="fieldexpression">
+            <param name="expression">
+                (person.confirmPassword.equals(person.password))
+            </param>
+            <message key="errors.twofields"/>
+        </field-validator>
+    </field>
+    <field name="person.firstName">
+        <field-validator type="requiredstring">
+            <message key="errors.required"/>
+        </field-validator>
+    </field>
+    <field name="person.lastName">
+        <field-validator type="requiredstring">
+            <message key="errors.required"/>
+        </field-validator>
+    </field>
+    <field name="person.email">
+        <field-validator type="requiredstring">
+            <message key="errors.required"/>
+        </field-validator>
+        <field-validator type="email">
+            <message key="errors.email"/>
+        </field-validator>
+    </field>
+    
+
+</validators>

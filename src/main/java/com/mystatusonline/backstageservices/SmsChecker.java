@@ -1,0 +1,143 @@
+package com.mystatusonline.backstageservices;
+
+import java.io.*;
+import java.util.Properties;
+
+import javax.mail.*;
+import javax.mail.internet.InternetAddress;
+import javax.mail.search.FlagTerm;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.mystatusonline.service.PersonManager;
+import com.mystatusonline.service.StatusUpdateException;
+
+
+/**
+ * Created by IntelliJ IDEA. User: pdamani Date: Feb 25, 2010 Time: 6:32:37 PM
+ * To change this template use File | Settings | File Templates.
+ */
+public class SmsChecker
+  extends Thread {
+
+
+  protected final Log log = LogFactory.getLog(getClass());
+
+  public static volatile boolean running = true;
+
+  private PersonManager personManager;
+  private String host;
+  private String username;
+  private String password;
+
+  public PersonManager getPersonManager() {
+    return personManager;
+  }
+
+  public void setPersonManager(PersonManager personManager) {
+    this.personManager = personManager;
+  }
+
+  public void setHost(String host) {
+    this.host = host;
+  }
+
+  public String getHost() {
+    return host;
+  }
+
+  public void setUsername(String username) {
+    this.username = username;
+  }
+
+  public String getUsername() {
+    return username;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
+  }
+
+  public String getPassword() {
+    return password;
+  }
+
+  @Override
+  public void run() {
+    work();
+  }
+
+  public void work() {
+
+    Properties props = System.getProperties();
+    props.setProperty("mail.store.protocol", "imaps");
+    Store store = null;
+    Folder inbox = null;
+    try {
+      Session session = Session.getDefaultInstance(props, null);
+      store = session.getStore("imaps");
+      store.connect(getHost(), getUsername(), getPassword());
+    } catch (NoSuchProviderException e) {
+      log.error("Could not get session with imap server", e);
+      e.printStackTrace();
+      return;
+    } catch (MessagingException e) {
+      log.error(e);
+      e.printStackTrace();
+      }
+    while (running) {
+      try {
+        inbox = store.getFolder("Inbox");
+        inbox.open(Folder.READ_WRITE);
+        FlagTerm ft = new FlagTerm(new Flags(Flags.Flag.SEEN), false);
+        Message[] messages = inbox.search(ft);
+        String status = null;
+        for (Message message : messages) {
+          String subject = message.getSubject();
+          if (subject.startsWith("SMS from")) {
+            InternetAddress[] froms = (InternetAddress[])message.getFrom();
+            String from = froms[0].getAddress();
+            int startIndex = from.indexOf(".");
+            int stopIndex = from.indexOf(".", startIndex + 1);
+            String fromNumber = from.substring(startIndex + 1, stopIndex);
+            try {
+              status = ((String)message.getContent())
+                .substring(0, ((String)message.getContent()).indexOf('\r'));
+              log.debug("Sending from "+ fromNumber + ":" + status);
+			  System.out.println("Sending from "+ fromNumber + ":" + status);
+              personManager.updateStatus(fromNumber, status);
+            } catch (IOException e) {
+              log.error(e);
+            } catch (StatusUpdateException e) {
+              log.error("Could not update status " + fromNumber + ":" + status,e);
+            }
+          }
+        }
+        inbox.setFlags(messages, new Flags(Flags.Flag.DELETED), true);
+        inbox.close(false);
+      } catch (NoSuchProviderException e) {
+        log.error(e);
+      } catch (MessagingException e) {
+        log.error(e);
+      }
+      try {
+        Thread.sleep(5000);
+      } catch (InterruptedException e) {
+        running = false;
+      }
+    }
+    try {
+      store.close();
+    } catch (MessagingException e) {
+      log.error(e);
+      e.printStackTrace();
+    }
+  }
+
+  public static void main(String[] args) {
+    SmsChecker sms = new SmsChecker();
+    sms.run();
+  }
+
+}

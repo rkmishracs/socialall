@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd"
+       default-lazy-init="true">
+
+    <bean id="loginCheckInterceptor"
+          class="com.mystatusonline.webapp.interceptor.LoginCheckInterceptor">     
+        <property name="personManager" ref="personManager"/>
+    </bean>
+    
+    <bean id="signupAction"
+          class="com.mystatusonline.webapp.action.SignupAction"
+          scope="prototype">
+        <property name="personManager" ref="personManager"/>
+        <property name="mailEngine" ref="mailEngine"/>
+        <property name="mailMessage" ref="mailMessage"/>
+        <property name="templateName" value="accountCreated.vm"/>
+    </bean>
+
+    <bean id="loginAction"
+          class="com.mystatusonline.webapp.action.LoginAction"
+          scope="prototype">
+        <property name="personManager" ref="personManager"/>
+    </bean>
+
+    <bean id="socialAction"
+          class="com.mystatusonline.webapp.action.SocialAction"
+          scope="prototype">
+        <property name="twitterAppApiKey" value="${twitterAppApiKey}"/>
+        <property name="twitterAppSecret" value="${twitterAppSecret}"/>
+        <property name="myspaceAppApiKey" value="${myspaceAppApiKey}"/>
+        <property name="myspaceAppSecret" value="${myspaceAppSecret}"/>
+        <property name="facebookAppApiKey" value="${facebookAppApiKey}"/>
+        <property name="personManager" ref="personManager"/>
+    </bean>
+
+    <bean id="networkAction"
+          class="com.mystatusonline.webapp.action.NetworkAction"
+          scope="prototype">
+        <property name="personManager" ref="personManager"/>
+    </bean>
+
+    <bean id="facebookAction"
+          class="com.mystatusonline.webapp.action.FacebookAction"
+          scope="prototype">
+        <property name="personManager" ref="personManager"/>
+    </bean>
+
+    <bean id="twitterAction"
+          class="com.mystatusonline.webapp.action.TwitterAction"
+          scope="prototype">
+        <property name="twitterAppApiKey" value="${twitterAppApiKey}"/>
+        <property name="twitterAppSecret" value="${twitterAppSecret}"/>
+        <property name="personManager" ref="personManager"/>
+    </bean>
+
+    <bean id="myspaceAction"
+          class="com.mystatusonline.webapp.action.MySpaceAction"
+          scope="prototype">
+        <property name="myspaceAppApiKey" value="${myspaceAppApiKey}"/>
+        <property name="myspaceAppSecret" value="${myspaceAppSecret}"/>
+        <property name="personManager" ref="personManager"/>
+    </bean>
+
+    <bean id="passwordResetNowAction"
+          class="com.mystatusonline.webapp.action.PasswordResetNowAction"
+          scope="prototype">
+        <property name="personManager" ref="personManager"/>
+    </bean>
+
+    <bean id="personAction"
+          class="com.mystatusonline.webapp.action.PersonAction"
+          scope="prototype">
+        <property name="personManager" ref="personManager"/>
+    </bean>
+    
+    
+    <bean id="passwordHintAction"
+          class="com.mystatusonline.webapp.action.PasswordHintAction"
+          scope="prototype">
+        <property name="personManager" ref="personManager"/>
+        <property name="mailEngine" ref="mailEngine"/>
+        <property name="mailMessage" ref="mailMessage"/>
+        <property name="templateName" value="resetPassword.vm"/>
+    </bean>
+</beans>
